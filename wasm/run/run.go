@@ -11,14 +11,14 @@ import (
 	"github.com/btrfldev/wind/wasm/env"
 )
 
-func Invoke(modname string, wasmPath string, env map[string]string) (string, error) {
+func Invoke(modname string, wasmPath string, env_vars map[string]string) (string, error) {
 	ctx := context.Background()
 
 	run := wazero.NewRuntime(ctx)
 	defer run.Close(ctx)
 	wasi_snapshot_preview1.MustInstantiate(ctx, run)
 
-	err := env.//env.PrepareRuntime(run, modname, ctx)
+	err := env.PrepareRuntime(run, modname, ctx)
 	if err != nil {
 		return "", err
 	}
@@ -31,7 +31,7 @@ func Invoke(modname string, wasmPath string, env map[string]string) (string, err
 	var stdoutBuf bytes.Buffer
 	config := wazero.NewModuleConfig().WithStdout(&stdoutBuf)
 
-	for k, v := range env {
+	for k, v := range env_vars {
 		config = config.WithEnv(k, v)
 	}
 

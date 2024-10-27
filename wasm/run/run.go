@@ -8,7 +8,7 @@ import (
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
-	"github.com/btrfldev/wind/env"
+	"github.com/btrfldev/wind/wasm/env"
 )
 
 func Invoke(modname string, wasmPath string, env map[string]string) (string, error) {
@@ -18,7 +18,7 @@ func Invoke(modname string, wasmPath string, env map[string]string) (string, err
 	defer run.Close(ctx)
 	wasi_snapshot_preview1.MustInstantiate(ctx, run)
 
-	err := PrepareRuntime(run, modname, ctx)
+	err := env.//env.PrepareRuntime(run, modname, ctx)
 	if err != nil {
 		return "", err
 	}

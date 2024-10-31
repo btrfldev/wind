@@ -1,4 +1,4 @@
-module  github.com/btrfldev/wind
+module github.com/btrfldev/wind
 
 go 1.23.2
 

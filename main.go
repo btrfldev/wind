@@ -3,10 +3,15 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/btrfldev/wind/init"
 )
 
 func main() {
 	fmt.Println("Wind is starting...")
+
+	cfg := init.GetConfig()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ping", ping)
 	mux.HandleFunc("GET /call", call)

@@ -1,4 +1,4 @@
-package run
+package component
 
 import (
 	"bytes"
@@ -8,22 +8,22 @@ import (
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
-	"github.com/btrfldev/wind/wasm/env"
+	"github.com/btrfldev/wind/component"
 )
 
-func Invoke(modname string, wasmPath string, env_vars map[string]string) (string, error) {
+func Invoke(compName string, wasmPath string, env_vars map[string]string) (string, error) {
 	ctx := context.Background()
 
 	run := wazero.NewRuntime(ctx)
 	defer run.Close(ctx)
 	wasi_snapshot_preview1.MustInstantiate(ctx, run)
 
-	err := env.PrepareRuntime(run, modname, ctx)
+	wasmFile, err := os.ReadFile(wasmPath)
 	if err != nil {
 		return "", err
 	}
 
-	wasmFile, err := os.ReadFile(wasmPath)
+	err = component.//component.Register(run, compName, wasmFile, ctx)
 	if err != nil {
 		return "", err
 	}

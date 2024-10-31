@@ -1,4 +1,4 @@
-package init
+package config
 
 import "os"
 
@@ -6,10 +6,10 @@ type Config struct {
 	Port string
 }
 
-func GetConfig() Config {
+func GetConfig() *Config {
 	cfg := Config{}
 
 	cfg.Port = os.Getenv("PORT")
 
-	return cfg
+	return &cfg
 }

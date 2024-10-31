@@ -5,36 +5,50 @@ import (
 	"fmt"
 
 	"github.com/tetratelabs/wazero"
+
+	"github.com/btrfldev/wind/storage"
 )
 
 type Component struct {
-	Name              string
-	CompiledComponent wazero.CompiledModule
+	CompiledComponent *wazero.CompiledModule
 }
 
 type ComponentStorage struct {
-	MemoryStore stor
+	memory storage.MemoryStore[string, Component]
 }
 
-func (cs *ComponentStorage)NewComponentStorage() {
-	
+func NewComponentStorage() *ComponentStorage {
+	return &ComponentStorage{
+		memory: *storage.NewMemoryStore[string, Component](),
+	}
 }
 
-func (cs *Components) Register(run wazero.Runtime, compName string, wasmFile []byte, ctx context.Context) (err error) {
-	_, err = run.NewHostModuleBuilder("env").NewFunctionBuilder().WithFunc(func(v uint32) {
+func (cs *ComponentStorage) Register(run wazero.Runtime, compName string, wasmFile []byte, ctx context.Context) (err error) {
+	comp, err := run.NewHostModuleBuilder("env").NewFunctionBuilder().WithFunc(func(v uint32) {
 		fmt.Println("log_i32 >> ", v)
-	}).Export("log_i32").Instantiate(ctx)
+	}).Export("log_i32").Compile(ctx)
 
 	if err != nil {
 		return err
 	}
 
-	comp, err := run.CompileModule(ctx, wasmFile)
-
-	cs[compName] = Component{
-		Name:              compName,
-		CompiledComponent: comp,
+	comp, err = run.CompileModule(ctx, wasmFile)
+	if err!=nil{
+		return nil
 	}
 
+	err = cs.memory.Put(compName, Component{
+		CompiledComponent: &comp,
+	})
+
 	return err
+}
+
+func (cs *ComponentStorage) Get(compName string) (Component, error) {
+	comp, err := cs.memory.Get(compName)
+	if err!=nil{
+		return Component{}, err
+	} else {
+		return comp, nil
+	}
 }

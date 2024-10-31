@@ -1,4 +1,4 @@
-package store
+package storage
 
 import (
 	"fmt"
@@ -6,20 +6,19 @@ import (
 )
 
 // Memory Key:Value Storage
-type MemoryStore struct {
-	mu      sync.RWMutex
-	memory map[string]string
+type MemoryStore[K comparable, V any] struct {
+	mu     sync.RWMutex
+	memory map[K]V
 }
 
-
-func NewMemoryStore() *MemoryStore {
-	return &MemoryStore{
-		memory: make(map[string]string),
+func NewMemoryStore[K comparable, V any]() *MemoryStore[K, V] {
+	return &MemoryStore[K, V]{
+		memory: make(map[K]V),
 		mu:     sync.RWMutex{},
 	}
 }
 
-func (m *MemoryStore) Put(key string, value string) error {
+func (m *MemoryStore[K, V]) Put(key K, value V) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -27,12 +26,12 @@ func (m *MemoryStore) Put(key string, value string) error {
 	return nil
 }
 
-func (m *MemoryStore) List(search func(k string, c string) bool, comp string) (keys []string, err error) {
+func (m *MemoryStore[K, V]) List(search func(k K) bool, comp V) (keys []K, err error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	for key := range m.memory {
-		if search(key, comp) {
+		if search(key) {
 			keys = append(keys, key)
 		}
 
@@ -41,7 +40,7 @@ func (m *MemoryStore) List(search func(k string, c string) bool, comp string) (k
 	return keys, nil
 }
 
-func (m *MemoryStore) Get(key string) (value string, err error) {
+func (m *MemoryStore[K, V]) Get(key K) (value V, err error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -65,7 +64,7 @@ func (m *MemoryStore) Get(key string) (value string, err error) {
 	return nil
 }*/
 
-func (m *MemoryStore) Delete(key string) (value string, err error) {
+func (m *MemoryStore[K, V]) Delete(key K) (value V, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

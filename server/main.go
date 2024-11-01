@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	//"context"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/btrfldev/wind/config"
-	"github.com/tetratelabs/wazero"
+	//"github.com/tetratelabs/wazero"
 )
 
 //go:embed registry.html
@@ -46,7 +46,6 @@ func (s *Server) Call(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "empty comp", http.StatusNotFound)
 		return
 	}
-	fmt.Println(compName)
 
 	comp, err := s.ComponentStorage.Get(compName) //Memory.Get(compName)
 	if err != nil {
@@ -58,7 +57,7 @@ func (s *Server) Call(w http.ResponseWriter, r *http.Request) {
 	res, err := comp.Invoke(map[string]string{})
 	finish := time.Now()
 	duration := finish.Sub(start)
-	fmt.Printf("Invoked in: %v\n", duration.Seconds())
+	fmt.Printf("Invoked in: %vms\n", duration.Milliseconds())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
@@ -91,10 +90,10 @@ func (s *Server) Registry(w http.ResponseWriter, r *http.Request) {
 		}
 
 		start := time.Now()
-		err = s.ComponentStorage.Register(wazero.NewRuntime(context.Background()), compName, compFile, r.Context())
+		err = s.ComponentStorage.Register(r.Context(), compName, compFile)
 		finish := time.Now()
 		duration := finish.Sub(start)
-		fmt.Printf("Compiled in: %v\n", duration.Seconds())
+		fmt.Printf("Compiled in: %vs\n", duration.Seconds())
 		if err != nil {
 			http.Error(w, "can`t register component", http.StatusInternalServerError)
 			return

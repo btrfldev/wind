@@ -1,54 +1,50 @@
 package component
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	//"context"
 
 	"github.com/tetratelabs/wazero"
-
-	"github.com/btrfldev/wind/storage"
+	//"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
 type Component struct {
+	Runtime wazero.Runtime
 	CompiledComponent *wazero.CompiledModule
 }
 
-type ComponentStorage struct {
-	memory storage.MemoryStore[string, Component]
-}
+func (c *Component)Invoke(/*compName string, wasmPath string,*/ env_vars map[string]string) (string, error) {
+	/*ctx := context.Background()
 
-func NewComponentStorage() *ComponentStorage {
-	return &ComponentStorage{
-		memory: *storage.NewMemoryStore[string, Component](),
-	}
-}
+	run := wazero.NewRuntime(ctx)
+	defer run.Close(ctx)
+	wasi_snapshot_preview1.MustInstantiate(ctx, run)*/
 
-func (cs *ComponentStorage) Register(run wazero.Runtime, compName string, wasmFile []byte, ctx context.Context) (err error) {
-	comp, err := run.NewHostModuleBuilder("env").NewFunctionBuilder().WithFunc(func(v uint32) {
-		fmt.Println("log_i32 >> ", v)
-	}).Export("log_i32").Compile(ctx)
-
+	/*wasmFile, err := os.ReadFile(wasmPath)
 	if err != nil {
-		return err
+		return "", err
+	}*/
+
+	/* comp, err := cs.memory.Get(compName)
+	if err != nil {
+		return "", err
+	} */
+
+	var stdLogBuf bytes.Buffer
+	config := wazero.NewModuleConfig().WithStdout(&stdLogBuf).WithStderr(&stdLogBuf)
+
+	for k, v := range env_vars {
+		config = config.WithEnv(k, v)
 	}
 
-	comp, err = run.CompileModule(ctx, wasmFile)
-	if err!=nil{
-		return nil
+	_, err := c.Runtime.InstantiateModule(context.Background(), *c.CompiledComponent, config)
+	if err != nil {
+		return "", err
 	}
+	
+	//_, err := run.InstantiateModule(ctx, *c.CompiledComponent /**comp.CompiledComponent*/, config)
 
-	err = cs.memory.Put(compName, Component{
-		CompiledComponent: &comp,
-	})
 
-	return err
-}
-
-func (cs *ComponentStorage) Get(compName string) (Component, error) {
-	comp, err := cs.memory.Get(compName)
-	if err!=nil{
-		return Component{}, err
-	} else {
-		return comp, nil
-	}
+	return stdLogBuf.String(), nil
 }

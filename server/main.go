@@ -1,16 +1,16 @@
 package main
 
 import (
-	//"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/btrfldev/wind/component"
 	"github.com/btrfldev/wind/config"
-	//"github.com/tetratelabs/wazero"
 )
 
 //go:embed registry.html
@@ -31,8 +31,8 @@ func main() {
 
 func (s *Server) Start() error {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/c/{comp}", s.Call)
 	mux.HandleFunc("GET /ping", s.ping)
-	mux.HandleFunc("GET /call", s.Call)
 	mux.HandleFunc("/registry", s.Registry)
 	mux.HandleFunc("/ui/registry", s.UIRegistry)
 
@@ -40,20 +40,24 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Call(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	compName := query.Get("comp")
+	compName := r.PathValue("comp")
 	if compName == "" {
-		http.Error(w, "empty comp", http.StatusNotFound)
+		http.Error(w, "empty component", http.StatusNotFound)
 		return
 	}
-
-	comp, err := s.ComponentStorage.Get(compName) //Memory.Get(compName)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	//println(compName)
+	var comp component.Component
+	var err error
+	if s.ComponentStorage.Has(compName) {
+		comp, err = s.ComponentStorage.Get(compName)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	} else {
+		http.Error(w, "Not Found", http.StatusNotFound)
 	}
 
 	start := time.Now()
-	//res, err :=run.Invoke(comp, "./components/"+comp+".wasm", map[string]string{})
 	res, err := comp.Invoke(map[string]string{})
 	finish := time.Now()
 	duration := finish.Sub(start)
@@ -100,6 +104,26 @@ func (s *Server) Registry(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.Write([]byte(compName))
 		}
+	case http.MethodGet:
+		query := r.URL.Query()
+		prefix := query.Get("prefix")
+		if prefix == "" {
+			http.Error(w, "empty prefix", http.StatusNotFound)
+			return
+		}
+
+		//start := time.Now()
+		list := s.ComponentStorage.List(prefix)
+		/*finish := time.Now()
+		duration := finish.Sub(start)
+		fmt.Printf("Listing in: %vs\n", duration.Microseconds())*/
+		lm := map[string]interface{}{"list": list}
+		ljs, err := json.Marshal(lm)
+		if err != nil {
+			http.Error(w, "can`t marshal JSON", http.StatusInternalServerError)
+			return
+		}
+		w.Write(ljs)
 	}
 }
 

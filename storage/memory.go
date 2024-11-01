@@ -26,7 +26,7 @@ func (m *MemoryStore[K, V]) Put(key K, value V) error {
 	return nil
 }
 
-func (m *MemoryStore[K, V]) List(search func(k K) bool, comp V) (keys []K, err error) {
+func (m *MemoryStore[K, V]) List(search func(k K) bool) (keys []K, err error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -34,7 +34,6 @@ func (m *MemoryStore[K, V]) List(search func(k K) bool, comp V) (keys []K, err e
 		if search(key) {
 			keys = append(keys, key)
 		}
-
 	}
 
 	return keys, nil
@@ -51,6 +50,18 @@ func (m *MemoryStore[K, V]) Get(key K) (value V, err error) {
 	return value, nil
 }
 
+func (m *MemoryStore[K, V]) Has(key K) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	_, ok := m.memory[key]
+	if !ok{
+		return false
+	} else {
+		return true
+	}
+}
+ 
 /*func (m *MemoryStore) Update(key string, value string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

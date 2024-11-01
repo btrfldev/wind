@@ -3,14 +3,13 @@ package component
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
 	"github.com/btrfldev/wind/storage"
 )
-
-
 
 type ComponentStorage struct {
 	memory storage.MemoryStore[string, Component]
@@ -24,7 +23,6 @@ func NewComponentStorage() *ComponentStorage {
 
 func (cs *ComponentStorage) Register(ctx context.Context, compName string, wasmFile []byte) (err error) {
 	run := wazero.NewRuntime(ctx)
-	//defer run.Close(ctx)
 	wasi_snapshot_preview1.MustInstantiate(ctx, run)
 
 	comp, err := run.NewHostModuleBuilder("env").NewFunctionBuilder().WithFunc(func(v uint32) {
@@ -36,12 +34,12 @@ func (cs *ComponentStorage) Register(ctx context.Context, compName string, wasmF
 	}
 
 	comp, err = run.CompileModule(ctx, wasmFile)
-	if err!=nil{
-		return nil
+	if err != nil {
+		return err
 	}
 
 	err = cs.memory.Put(compName, Component{
-		Runtime: run,
+		Runtime:           run,
 		CompiledComponent: &comp,
 	})
 
@@ -50,9 +48,20 @@ func (cs *ComponentStorage) Register(ctx context.Context, compName string, wasmF
 
 func (cs *ComponentStorage) Get(compName string) (Component, error) {
 	comp, err := cs.memory.Get(compName)
-	if err!=nil{
+	if err != nil {
 		return Component{}, err
 	} else {
 		return comp, nil
 	}
+}
+
+func (cs *ComponentStorage) Has(compName string) (bool) {
+	return cs.memory.Has(compName)
+}
+
+func (cs *ComponentStorage) List(prefix string) ([]string) {
+	list, _ := cs.memory.List(func(k string) bool {
+		return strings.HasPrefix(k, prefix)
+	})
+	return list
 }

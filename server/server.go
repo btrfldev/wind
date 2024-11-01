@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/btrfldev/wind/component"
-	//"github.com/btrfldev/wind/storage"
 )
 
 type Server struct {

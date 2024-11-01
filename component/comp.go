@@ -3,34 +3,18 @@ package component
 import (
 	"bytes"
 	"context"
-	//"context"
+	"fmt"
 
 	"github.com/tetratelabs/wazero"
-	//"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
 type Component struct {
-	Runtime wazero.Runtime
+	Runtime           wazero.Runtime
 	CompiledComponent *wazero.CompiledModule
 }
 
-func (c *Component)Invoke(/*compName string, wasmPath string,*/ env_vars map[string]string) (string, error) {
-	/*ctx := context.Background()
-
-	run := wazero.NewRuntime(ctx)
-	defer run.Close(ctx)
-	wasi_snapshot_preview1.MustInstantiate(ctx, run)*/
-
-	/*wasmFile, err := os.ReadFile(wasmPath)
-	if err != nil {
-		return "", err
-	}*/
-
-	/* comp, err := cs.memory.Get(compName)
-	if err != nil {
-		return "", err
-	} */
-
+func (c *Component) Invoke(env_vars map[string]string) (string, error) {
+	ctx := context.Background()
 	var stdLogBuf bytes.Buffer
 	config := wazero.NewModuleConfig().WithStdout(&stdLogBuf).WithStderr(&stdLogBuf)
 
@@ -38,13 +22,16 @@ func (c *Component)Invoke(/*compName string, wasmPath string,*/ env_vars map[str
 		config = config.WithEnv(k, v)
 	}
 
-	_, err := c.Runtime.InstantiateModule(context.Background(), *c.CompiledComponent, config)
+	_, err := c.Runtime.InstantiateModule(ctx, *c.CompiledComponent, config)
 	if err != nil {
 		return "", err
 	}
-	
-	//_, err := run.InstantiateModule(ctx, *c.CompiledComponent /**comp.CompiledComponent*/, config)
 
 
-	return stdLogBuf.String(), nil
+	log := stdLogBuf.String()
+	if log != "" {
+		fmt.Println(log)
+	}
+
+	return log, nil
 }
